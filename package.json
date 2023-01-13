@@ -4,7 +4,8 @@
   "version": "0.0.1",
   "description": "This is a private repo that will be used to complete work for course CCP555.",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "lint": "eslint --config .eslintrc.js src/**"
   },
   "repository": {
     "type": "git",
@@ -13,6 +14,7 @@
   "author": "Humam Bahoo",
   "license": "UNLICENSED",
   "devDependencies": {
+    "eslint": "^8.31.0",
     "prettier": "2.8.2"
   }
 }
