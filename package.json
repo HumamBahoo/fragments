@@ -11,5 +11,8 @@
     "url": "git+https://github.com/HumamBahoo/fragments.git"
   },
   "author": "Humam Bahoo",
-  "license": "UNLICENSED"
+  "license": "UNLICENSED",
+  "devDependencies": {
+    "prettier": "2.8.2"
+  }
 }
