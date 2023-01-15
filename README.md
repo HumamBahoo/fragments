@@ -38,40 +38,42 @@ npm run lint
   
 ### Nodemon
 
-This dev dependency tool that is used to automatically reload our server when there is a code change.
+This is a dev dependency tool that is used to automatically reload our server when there is a code change.
+
+[More information](https://www.npmjs.com/package/nodemon).
 
 ### Compression
 
 A middleware used in our Express app that attempts to compress response bodies of our requests.
 
-[More information](https://www.npmjs.com/package/compression)
+[More information](https://www.npmjs.com/package/compression).
 
 ### CORS
 
 A middleware used in our Express app to make requests across origins.
 
-[More information](https://www.npmjs.com/package/cors)
+[More information](https://www.npmjs.com/package/cors).
 
 ### Express
 
 A Node.js framework to build web applications and APIs. This will be the framework used to build our app.
 
-[More information](https://www.npmjs.com/package/express)
+[More information](https://www.npmjs.com/package/express).
 
 ### Helmet
 
 A middleware that helps in securing our application.
 
-[More information](https://www.npmjs.com/package/helmet)
+[More information](https://www.npmjs.com/package/helmet).
 
 ### Pino
 
 A Node.js logger tool that is used to do Structured Logging and display nicely formatted JSON string.
 
-[More information](https://getpino.io/#/)
+[More information](https://getpino.io/#/).
 
 ### Stoppable
 
 A tool to allow our server to exit gracefully when shutting down.
 
-[More information](https://www.npmjs.com/package/stoppable)
+[More information](https://www.npmjs.com/package/stoppable).
