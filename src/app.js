@@ -4,10 +4,6 @@ const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
 const compression = require('compression');
-
-// get version and author from package.json file.
-const { version, author } = require('../package.json');
-
 const logger = require('./logger');
 const pino = require('pino-http')({
   // use our already configured default logger instance.
@@ -29,21 +25,8 @@ app.use(cors());
 // use gzip/deflate compression middleware.
 app.use(compression());
 
-// define a simple health check route. if server is running,
-// we'll respond with a 200 OK. else the server isn't healthy.
-app.get('/', (req, res) => {
-  // client shouldn't cache this response (always request it fresh)
-  // See: https://developer.mozilla.org/en-US/docs/Web/HTTP/Caching#controlling_caching
-  res.setHeader('Cache-Control', 'no-cache');
-
-  // send a 200 'OK' response with info about our repo
-  res.status(200).json({
-    status: 'ok',
-    author,
-    githubUrl: 'https://github.com/humambahoo/fragments',
-    version,
-  });
-});
+// Define our routes
+app.use('/', require('./routes'));
 
 // add 404 middleware to handle requests for resources that don't exist.
 app.use((req, res) => {
