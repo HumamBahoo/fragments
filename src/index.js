@@ -22,3 +22,5 @@ process.on('unhandledRejection', (reason, promise) => {
 
 // Start our server
 require('./server');
+
+const unneededVariable = 'this variable is never used';
