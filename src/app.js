@@ -55,13 +55,8 @@ app.use((err, req, res, next) => {
     logger.error({ err }, `Error processing request`);
   }
 
-  res.status(status).json({
-    status: 'error',
-    error: {
-      message,
-      code: status,
-    },
-  });
+  const createErrorResponse = response.createErrorResponse(status, message);
+  res.status(status).json(createErrorResponse);
 });
 
 // export 'app', so we can access it in server.js.
