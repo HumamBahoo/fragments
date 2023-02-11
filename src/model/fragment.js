@@ -45,8 +45,17 @@ class Fragment {
       this.id = id;
     }
 
-    this.created = new Date().toISOString();
-    this.updated = new Date().toISOString();
+    if (created == undefined) {
+      this.created = new Date().toISOString();
+    } else {
+      this.created = created;
+    }
+
+    if (updated == undefined) {
+      this.updated = new Date().toISOString();
+    } else {
+      this.updated = updated;
+    }
   }
 
   /**
