@@ -21,40 +21,21 @@ class Fragment {
   constructor({ id, ownerId, created, updated, type, size = 0 }) {
     if (ownerId == undefined) {
       throw new Error('ownerId is missing');
+    } else if (type == undefined) {
+      throw new Error('type is missing');
+    } else if (!Fragment.isSupportedType(type)) {
+      throw new Error(`invalid type: ${type}`);
+    } else if (typeof size != 'number') {
+      throw new Error(`invalid size type: ${typeof size}`);
+    } else if (size < 0) {
+      throw new Error(`size cannot be negative: size${size}`);
     } else {
       this.ownerId = ownerId;
-    }
-
-    if (type == undefined) {
-      throw new Error('type is missing');
-    } else if (Fragment.isSupportedType(type)) {
       this.type = type;
-    } else {
-      throw new Error(`invalid type: ${type}`);
-    }
-
-    if (typeof size != 'number' || size < 0) {
-      throw new Error(`invalid size: ${size}`);
-    } else {
       this.size = size;
-    }
-
-    if (id == undefined) {
-      this.id = randomUUID();
-    } else {
-      this.id = id;
-    }
-
-    if (created == undefined) {
-      this.created = new Date().toISOString();
-    } else {
-      this.created = created;
-    }
-
-    if (updated == undefined) {
-      this.updated = new Date().toISOString();
-    } else {
-      this.updated = updated;
+      this.id = id || randomUUID();
+      this.created = new Date().toISOString() || created;
+      this.updated = new Date().toISOString() || updated;
     }
   }
 
@@ -66,6 +47,11 @@ class Fragment {
    */
   static async byUser(ownerId, expand = false) {
     const result = await listFragments(ownerId, expand);
+
+    if (!result) {
+      throw new Error(`Fragment(s) by user: ${ownerId} not found in db`);
+    }
+
     return Promise.resolve(result);
   }
 
@@ -79,7 +65,7 @@ class Fragment {
     const result = await readFragment(ownerId, id);
 
     if (!result) {
-      throw new Error(`Fragment with id:${id} not found in db`);
+      throw new Error(`Fragment with id: ${id} not found in db`);
     }
 
     return Promise.resolve(result);
@@ -103,7 +89,6 @@ class Fragment {
   async save() {
     this.updated = new Date().toISOString();
     await writeFragment(this);
-
     return Promise.resolve();
   }
 
@@ -130,7 +115,11 @@ class Fragment {
     this.size = data.byteLength;
     this.updated = new Date().toISOString();
 
-    await writeFragmentData(this.ownerId, this.id, data);
+    try {
+      await writeFragmentData(this.ownerId, this.id, data);
+    } catch (err) {
+      throw new Error(`Failed to write data for fragment with id: ${this.id}`);
+    }
 
     return Promise.resolve();
   }
