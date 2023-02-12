@@ -1,5 +1,3 @@
-// tests/unit/health.test.js
-
 // tests/unit/app.test.js
 
 // // add 404 middleware to handle requests for resources that don't exist.
