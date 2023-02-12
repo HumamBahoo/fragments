@@ -77,6 +77,7 @@ describe('POST /v1/fragments', () => {
       .auth('user1@email.com', 'password1')
       .set('content-type', 'text/plain')
       .send('This is a fragment');
+
     expect(res.status).toEqual(201);
     expect(res.get('content-type')).toBe('application/json; charset=utf-8');
     expect(res.get('Location')).toBe(`${process.env.API_URL}/v1/fragments/${res.body.id}`);

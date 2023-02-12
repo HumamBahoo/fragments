@@ -8,6 +8,7 @@ module.exports = async (req, res) => {
   if (Buffer.isBuffer(req.body)) {
     // create fragment and set its data
     const fragment = new Fragment({ ownerId: req.user, type: req.get('content-type') });
+    fragment.save();
     fragment.setData(req.body);
 
     // set response Location
