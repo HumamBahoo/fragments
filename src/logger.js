@@ -5,6 +5,7 @@ const options = { level: process.env.LOG_LEVEL || 'info' };
 
 // make logs easier to read using pino-pretty, if we're using 'debug' logging
 if (options.level === 'debug') {
+  // https://github.com/pinojs/pino-pretty
   options.transport = {
     target: 'pino-pretty',
     options: {

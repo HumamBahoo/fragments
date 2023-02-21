@@ -5,9 +5,8 @@ const cors = require('cors');
 const helmet = require('helmet');
 const compression = require('compression');
 const logger = require('./logger');
-
-// get version and author from package.json
-const { version, author } = require('../package.json');
+const passport = require('passport');
+const authenticate = require('./authentication');
 
 // use our default logger instance
 const pino = require('pino-http')({ logger });
@@ -19,7 +18,7 @@ const app = express();
 app.use(pino);
 
 // attach security middleware
-app.use(helmet);
+app.use(helmet());
 
 // attach CORS middleware to make requests across origins
 app.use(cors());
@@ -27,21 +26,12 @@ app.use(cors());
 // attach compression middleware
 app.use(compression());
 
-// health check route
-app.get('/', (req, res) => {
-  // Clients shouldn't cache this response (always request it fresh)
-  // See: https://developer.mozilla.org/en-US/docs/Web/HTTP/Caching#controlling_caching
-  res.setHeader('Cache-Control', 'no-cache');
+// setup passport authentication middleware
+passport.use(authenticate.strategy());
+app.use(passport.initialize());
 
-  // Send a 200 'OK' response with info about our repo
-  res.status(200).json({
-    status: 'ok',
-    author,
-    // TODO: change this to use your GitHub username
-    githubUrl: 'https://github.com/humambahoo/fragments',
-    version,
-  });
-});
+// Define our routes
+app.use('/', require('./routes'));
 
 // 404 middleware to handle requests for resources that can't be found
 app.use((req, res) => {
