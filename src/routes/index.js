@@ -1,7 +1,7 @@
 // src/routes/index.js
 
 const express = require('express');
-const { authenticate } = require('../authentication');
+const { authenticate } = require('../authorization/index');
 const { version, author } = require('../../package.json');
 
 const router = express.Router();

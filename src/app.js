@@ -6,7 +6,7 @@ const helmet = require('helmet');
 const compression = require('compression');
 const logger = require('./logger');
 const passport = require('passport');
-const authenticate = require('./authentication');
+const authenticate = require('./authorization/index');
 
 // use our default logger instance
 const pino = require('pino-http')({ logger });
