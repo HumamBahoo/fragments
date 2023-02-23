@@ -3,6 +3,7 @@
 const express = require('express');
 const { authenticate } = require('../authorization/index');
 const { version, author } = require('../../package.json');
+const { createSuccessResponse } = require('../response');
 
 const router = express.Router();
 
@@ -16,14 +17,13 @@ router.get('/', (req, res) => {
   // See: https://developer.mozilla.org/en-US/docs/Web/HTTP/Caching#controlling_caching
   res.setHeader('Cache-Control', 'no-cache');
 
-  // Send a 200 'OK' response with info about our repo
-  res.status(200).json({
-    status: 'ok',
-    author,
-    // TODO: change this to use your GitHub username
+  const successResponse = createSuccessResponse({
+    author: author,
     githubUrl: 'https://github.com/humambahoo/fragments',
-    version,
+    version: version,
   });
+
+  res.status(200).json(successResponse);
 });
 
 // export our router

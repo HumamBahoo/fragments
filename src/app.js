@@ -7,6 +7,7 @@ const compression = require('compression');
 const logger = require('./logger');
 const passport = require('passport');
 const authenticate = require('./authorization/index');
+const { createErrorResponse } = require('./response');
 
 // use our default logger instance
 const pino = require('pino-http')({ logger });
@@ -35,13 +36,10 @@ app.use('/', require('./routes'));
 
 // 404 middleware to handle requests for resources that can't be found
 app.use((req, res) => {
-  res.status(404).json({
-    status: 'error',
-    error: {
-      message: 'not found',
-      code: 404,
-    },
-  });
+  logger.error({ path: `${req.headers.host}${req.url}` }, 'resource is not found');
+
+  const errorResponse = createErrorResponse(404, 'not found');
+  res.status(404).json(errorResponse);
 });
 
 // error handling middleware to deal with anything else
@@ -49,21 +47,16 @@ app.use((req, res) => {
 app.use((err, req, res, next) => {
   // We may already have an error response we can use, but if not, use a generic
   // 500 server error and message.
-  const status = err.status || 500;
+  const code = err.status || 500;
   const message = err.message || 'unable to process request';
 
   // If this is a server error, log something so we can see what's going on.
-  if (status > 499) {
+  if (code > 499) {
     logger.error({ err }, 'Error processing request');
   }
 
-  res.status(status).json({
-    status: 'error',
-    error: {
-      message,
-      code: status,
-    },
-  });
+  const errorResponse = createErrorResponse(code, message);
+  res.status(code).json(errorResponse);
 });
 
 // export our app for to be used by server.js
