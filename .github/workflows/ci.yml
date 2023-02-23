@@ -8,10 +8,11 @@ name: ci
 on:
   pull_request:
     branches:
-      - hbahoo-framgents
+      - main
   push:
     branches:
-      - hbahoo-framgents
+      - main
+      - hbahoo-fragments
 
 jobs:
   lint:
