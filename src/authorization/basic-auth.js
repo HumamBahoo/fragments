@@ -16,13 +16,15 @@ if (!process.env.HTPASSWD_FILE) {
   throw new Error(errorMessage);
 }
 
-module.exports.strategy = () =>
+module.exports.strategy = () => {
+  logger.info('Using Basic-Auth strategy');
   // For our Passport authentication strategy, we'll look for a
   // username/password pair in the Authorization header.
-  authPassport(
+  return authPassport(
     auth.basic({
       file: process.env.HTPASSWD_FILE,
     })
   );
+};
 
 module.exports.authenticate = () => passport.authenticate('http', { session: false });

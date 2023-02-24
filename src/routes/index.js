@@ -1,7 +1,7 @@
 // src/routes/index.js
 
 const express = require('express');
-const { authenticate } = require('../authorization/index');
+const { authenticate } = require('../authorization');
 const { version, author } = require('../../package.json');
 const { createSuccessResponse } = require('../response');
 
@@ -23,6 +23,7 @@ router.get('/', (req, res) => {
     version: version,
   });
 
+  // Send a 200 'OK' response with info about our repo
   res.status(200).json(successResponse);
 });
 

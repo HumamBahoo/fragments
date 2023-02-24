@@ -6,7 +6,7 @@ const helmet = require('helmet');
 const compression = require('compression');
 const logger = require('./logger');
 const passport = require('passport');
-const authenticate = require('./authorization/index');
+const authenticate = require('./authorization');
 const { createErrorResponse } = require('./response');
 
 // use our default logger instance
