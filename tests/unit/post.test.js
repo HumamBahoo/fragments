@@ -91,8 +91,6 @@ describe('POST /fragments', () => {
     expect(res.status).toEqual(201);
     expect(res.get('content-type')).toBe('application/json; charset=utf-8');
     expect(res.get('content-length')).toHaveLength;
-    expect(res.get('Location')).toBe(
-      `${process.env.API_URL}:${process.env.PORT}/v1/fragments/${res.body.fragment.id}`
-    );
+    expect(res.get('Location')).toBe(`${process.env.API_URL}/v1/fragments/${res.body.fragment.id}`);
   });
 });

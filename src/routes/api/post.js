@@ -19,10 +19,7 @@ module.exports.postFragment = async (req, res) => {
     if (process.env.API_URL == undefined) {
       res.set('Location', `${req.headers.host}/v1/fragments/${newFragment.id}`);
     } else {
-      res.set(
-        'Location',
-        `${process.env.API_URL}:${process.env.PORT}/v1/fragments/${newFragment.id}`
-      );
+      res.set('Location', `${process.env.API_URL}/v1/fragments/${newFragment.id}`);
     }
 
     res.set('Access-Control-Expose-Headers', 'Location');
