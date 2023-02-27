@@ -2,6 +2,7 @@
 
 const request = require('supertest');
 const app = require('../../src/app');
+const hash = require('../../src/hash');
 
 describe('POST /fragments', () => {
   test('unauthenticated requests should be denied', async () => {
@@ -70,7 +71,7 @@ describe('POST /fragments', () => {
 
     const resFragment = res.body.fragment;
 
-    expect(resFragment.ownerId).toBe('user1@email.com');
+    expect(resFragment.ownerId).toBe(hash('user1@email.com'));
     expect(resFragment.created).toBeDefined;
     expect(resFragment.updated).toBeDefined;
     expect(resFragment.size).toEqual('This is a fragment'.length);

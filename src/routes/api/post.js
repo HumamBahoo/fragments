@@ -25,10 +25,12 @@ module.exports.postFragment = async (req, res) => {
       );
     }
 
-    const successResponse = createSuccessResponse({ fragment: newFragment });
-    res.status(201).json(successResponse);
+    res.set('Access-Control-Expose-Headers', 'Location');
 
-    logger.debug('A new fragment has been created', successResponse);
+    const successResponse = createSuccessResponse({ fragment: newFragment });
+    res.status(201).send(successResponse);
+
+    logger.debug(res, 'A new fragment has been created');
   } else {
     const errorResponse = createErrorResponse(415, 'unsupported media type');
     res.status(415).json(errorResponse);
