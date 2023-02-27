@@ -6,7 +6,7 @@
 FROM node:18.14.2
 
 # Metadata about our image by using instruction LABEL
-LABEL maintainer="Humam Bahoo <hbahoo@myseneca.ca"
+LABEL maintainer="Humam Bahoo hbahoo@myseneca.ca"
 LABEL description="Fragments node.js microservice"
 
 # Environment variables defined using ENV instruction
