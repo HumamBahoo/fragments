@@ -3,7 +3,7 @@
 // use 'info' as our standard log level if not specified
 const options = { level: process.env.LOG_LEVEL || 'info' };
 
-// if we're doing 'debug' logging, make the logs easier to read
+// make logs easier to read using pino-pretty, if we're using 'debug' logging
 if (options.level === 'debug') {
   // https://github.com/pinojs/pino-pretty
   options.transport = {
@@ -14,6 +14,5 @@ if (options.level === 'debug') {
   };
 }
 
-// create and export a Pino Logger instance:
-// https://getpino.io/#/docs/api?id=logger
+// export Pino Logger instance
 module.exports = require('pino')(options);

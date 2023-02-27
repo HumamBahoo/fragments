@@ -4,69 +4,79 @@ const request = require('supertest');
 const app = require('../../src/app');
 const hash = require('../../src/hash');
 
-describe('POST /v1/fragments', () => {
+describe('POST /fragments', () => {
   test('unauthenticated requests should be denied', async () => {
     const res = await request(app).post('/v1/fragments');
-    expect(res.status).toEqual(401);
+
+    expect(res.statusCode).toBe(401);
   });
 
   test('incorrect credentials should be denied', async () => {
     const res = await request(app)
       .post('/v1/fragments')
       .auth('invalid@email.com', 'incorrect_password');
-    expect(res.status).toEqual(401);
+
+    expect(res.statusCode).toBe(401);
   });
 
-  test('authenticated user can create a plain text fragment', async () => {
+  test('authenticated users can create a plain text fragment', async () => {
     const res = await request(app)
       .post('/v1/fragments')
       .auth('user1@email.com', 'password1')
-      .set('content-type', 'text/plain')
+      .set('Content-Type', 'text/plain')
       .send('This is a fragment');
-    expect(res.status).toEqual(201);
+
+    expect(res.statusCode).toBe(201);
   });
 
-  test('request has no body', async () => {
-    const res = await request(app)
-      .post('/v1/fragments')
-      .auth('user1@email.com', 'password1')
-      .send();
-    expect(res.status).toEqual(500);
-  });
-
-  test('invalid media type', async () => {
+  test('requests with invalid media type should throw', async () => {
     const res = await request(app)
       .post('/v1/fragments')
       .auth('user1@email.com', 'password1')
       .set('Content-Type', 'invalid')
       .send('This is a fragment');
-    expect(res.status).toEqual(500);
+
+    expect(res.statusCode).toBe(500);
+    expect(res.body.error.message).toBe('invalid media type');
   });
 
-  test('unsupported media type', async () => {
+  test('requests with an unsupported media types should throw', async () => {
     const res = await request(app)
       .post('/v1/fragments')
       .auth('user1@email.com', 'password1')
-      .set('Content-Type', 'image/jpeg')
+      .set('Content-Type', 'media/jpeg')
       .send('This is a fragment');
-    expect(res.status).toEqual(415);
+
+    expect(res.statusCode).toBe(415);
+    expect(res.body.error.message).toBe('unsupported media type');
   });
 
-  test('response body should include all necessary properties', async () => {
-    const hashedEmail = hash('user1@email.com');
-
+  test('A successful response should include status, and a fragment object', async () => {
     const res = await request(app)
       .post('/v1/fragments')
       .auth('user1@email.com', 'password1')
-      .set('content-type', 'text/plain')
+      .set('Content-Type', 'text/plain')
       .send('This is a fragment');
+
     expect(res.body.status).toBe('ok');
-    expect(res.body.ownerId).toBe(hashedEmail);
-    expect(res.body.type).toBe('text/plain');
-    expect(res.body.size).toEqual('This is a fragment'.length);
-    expect(res.body.created).toBeDefined;
-    expect(res.body.updated).toBeDefined;
-    expect(res.body.id).toMatch(
+    expect(res.body.fragment).toBeDefined;
+  });
+
+  test('A successful response fragment object should include all necessary properties', async () => {
+    const res = await request(app)
+      .post('/v1/fragments')
+      .auth('user1@email.com', 'password1')
+      .set('Content-Type', 'text/plain')
+      .send('This is a fragment');
+
+    const resFragment = res.body.fragment;
+
+    expect(resFragment.ownerId).toBe(hash('user1@email.com'));
+    expect(resFragment.created).toBeDefined;
+    expect(resFragment.updated).toBeDefined;
+    expect(resFragment.size).toEqual('This is a fragment'.length);
+    expect(resFragment.type).toBe('text/plain');
+    expect(resFragment.id).toMatch(
       /^[0-9a-fA-F]{8}\b-[0-9a-fA-F]{4}\b-[0-9a-fA-F]{4}\b-[0-9a-fA-F]{4}\b-[0-9a-fA-F]{12}$/
     );
   });
@@ -80,7 +90,9 @@ describe('POST /v1/fragments', () => {
 
     expect(res.status).toEqual(201);
     expect(res.get('content-type')).toBe('application/json; charset=utf-8');
-    expect(res.get('Location')).toBe(`${process.env.API_URL}/v1/fragments/${res.body.id}`);
     expect(res.get('content-length')).toHaveLength;
+    expect(res.get('Location')).toBe(
+      `${process.env.API_URL}:${process.env.PORT}/v1/fragments/${res.body.fragment.id}`
+    );
   });
 });

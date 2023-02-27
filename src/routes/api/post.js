@@ -1,31 +1,40 @@
 // src/routes/api/post.js
 
-const response = require('../../response');
+const logger = require('../../logger');
 const { Fragment } = require('../../model/fragment');
+const { createSuccessResponse, createErrorResponse } = require('../../response');
 
-module.exports = async (req, res) => {
-  // if buffer data in request body is valid
+// Post /fragments
+module.exports.postFragment = async (req, res) => {
   if (Buffer.isBuffer(req.body)) {
-    // create fragment and set its data
-    const fragment = new Fragment({ ownerId: req.user, type: req.get('content-type') });
-    fragment.save();
-    fragment.setData(req.body);
+    const reqOwnerId = req.user;
+    const reqContentType = req.get('content-type');
 
-    // set response Location
+    // create, set, and save the new fragment
+    const newFragment = new Fragment({ ownerId: reqOwnerId, type: reqContentType });
+    newFragment.setData(req.body);
+    newFragment.save();
+
+    // setting response headers: 'Location'
     if (process.env.API_URL == undefined) {
-      res.set('Location', `${req.headers.host}/v1/fragments/${fragment.id}`);
+      res.set('Location', `${req.headers.host}/v1/fragments/${newFragment.id}`);
     } else {
-      res.set('Location', `${process.env.API_URL}/v1/fragments/${fragment.id}`);
+      res.set(
+        'Location',
+        `${process.env.API_URL}:${process.env.PORT}/v1/fragments/${newFragment.id}`
+      );
     }
 
-    const successResponse = response.createSuccessResponse(fragment);
+    res.set('Access-Control-Expose-Headers', 'Location');
 
-    return res.status(201).json(successResponse);
-  }
-  // if buffer is with an invalid media type
-  else {
-    const errorResponse = response.createErrorResponse(415, 'invalid media type');
+    const successResponse = createSuccessResponse({ fragment: newFragment });
+    res.status(201).send(successResponse);
 
-    return res.status(415).json(errorResponse);
+    logger.debug(res, 'A new fragment has been created');
+  } else {
+    const errorResponse = createErrorResponse(415, 'unsupported media type');
+    res.status(415).json(errorResponse);
+
+    logger.error('Unable to create a new fragment', errorResponse);
   }
 };

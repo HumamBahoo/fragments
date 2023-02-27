@@ -1,5 +1,3 @@
-// test/unit/memory-test.js
-
 const {
   listFragments,
   writeFragment,
@@ -7,12 +5,10 @@ const {
   writeFragmentData,
   readFragmentData,
   deleteFragment,
-} = require('../../src/model/data/memory/index');
+} = require('../../src/model/data/memory');
 
-describe('memory', () => {
-  beforeEach(() => {});
-
-  test('readFragment() should returns nothing', async () => {
+describe('fragment database related calls', () => {
+  test('readFragment() should return nothing', async () => {
     const result = await readFragment('a', 'b');
     expect(result).toBe(undefined);
   });
@@ -71,5 +67,12 @@ describe('memory', () => {
 
   test('deleteFragment() should throw when provided keys do not exist', async () => {
     expect(() => deleteFragment('x', 'y')).rejects.toThrow();
+  });
+
+  test('listFragments() with expand set to true should return an empty array', async () => {
+    const results = await listFragments('not-an-id', true);
+
+    expect(Array.isArray(results)).toBe(true);
+    expect(results.length).toBe(0);
   });
 });

@@ -5,59 +5,59 @@ const cors = require('cors');
 const helmet = require('helmet');
 const compression = require('compression');
 const logger = require('./logger');
-const pino = require('pino-http')({
-  // use our already configured default logger instance.
-  logger,
-});
 const passport = require('passport');
-const authenticate = require('./authorization/index');
-const response = require('./response');
+const authenticate = require('./authorization');
+const { createErrorResponse } = require('./response');
 
-// create an express app instance we can use to attach middleware and HTTP routes.
+// use our default logger instance
+const pino = require('pino-http')({ logger });
+
+// create an express app instance to attach our middleware and HTTP routes
 const app = express();
 
-// use logging middleware.
+// attach logging middleware
 app.use(pino);
 
-// use security middleware.
+// attach security middleware
 app.use(helmet());
 
-// use CORS middleware to make requests across origins.
+// attach CORS middleware to make requests across origins
 app.use(cors());
 
-// use gzip/deflate compression middleware.
+// attach compression middleware
 app.use(compression());
 
-// Set up our passport authentication middleware
+// setup passport authentication middleware
 passport.use(authenticate.strategy());
 app.use(passport.initialize());
 
 // Define our routes
 app.use('/', require('./routes'));
 
-// add 404 middleware to handle requests for resources that don't exist.
+// 404 middleware to handle requests for resources that can't be found
 app.use((req, res) => {
-  // create an error response with the details
-  const createErrorResponse = response.createErrorResponse(404, 'not found');
-  res.status(404).json(createErrorResponse);
+  logger.error({ path: `${req.headers.host}${req.url}` }, 'resource is not found');
+
+  const errorResponse = createErrorResponse(404, 'not found');
+  res.status(404).json(errorResponse);
 });
 
-// add error-handling middleware to deal with anything else.
+// error handling middleware to deal with anything else
 // eslint-disable-next-line no-unused-vars
 app.use((err, req, res, next) => {
-  // there maybe an error response we can use already, if not, use
-  // a generic 500 server error and message.
-  const status = err.status || 500;
+  // We may already have an error response we can use, but if not, use a generic
+  // 500 server error and message.
+  const code = err.status || 500;
   const message = err.message || 'unable to process request';
 
-  // if this a server error, log something, so we can see what's going on.
-  if (status > 499) {
-    logger.error({ err }, `Error processing request`);
+  // If this is a server error, log something so we can see what's going on.
+  if (code > 499) {
+    logger.error({ err }, 'Error processing request');
   }
 
-  const createErrorResponse = response.createErrorResponse(status, message);
-  res.status(status).json(createErrorResponse);
+  const errorResponse = createErrorResponse(code, message);
+  res.status(code).json(errorResponse);
 });
 
-// export 'app', so we can access it in server.js.
+// export our app for to be used by server.js
 module.exports = app;

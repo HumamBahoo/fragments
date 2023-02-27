@@ -1,36 +1,39 @@
 // src/routes/api/get.js
 
-const response = require('../../response');
 const { Fragment } = require('../../model/fragment');
-/**
- * Get a list of fragments for the current user
- */
-module.exports.get = (req, res) => {
-  const data = {
+const { createSuccessResponse, createErrorResponse } = require('../../response');
+
+// Get a list of fragments for the current user
+module.exports.getFragments = (req, res) => {
+  // TODO: this is just a place holder to get something working
+  const successResponse = createSuccessResponse({
+    status: 'ok',
     fragments: [],
-  };
+  });
 
-  const createSuccessResponse = response.createSuccessResponse(data);
-
-  res.status(200).json(createSuccessResponse);
+  res.status(200).json(successResponse);
 };
 
-module.exports.getById = async (req, res) => {
-  if (req.params.id == 'not-found') {
-    return res.status(404).json(response.createErrorResponse(404, 'not found'));
-  }
+// Get fragment data by Id
+module.exports.getFragmentDataById = async (req, res) => {
+  const fragmentId = req.params.id;
+  const ownerId = req.user;
 
   try {
-    const fragment = await Fragment.byId(req.user, req.params.id);
-    const fragmentData = await fragment.getData();
+    const fragment = await Fragment.byId(ownerId, fragmentId);
 
-    if (fragment.isText) {
-      res.set('content-type', fragment.mimeType);
-      res.status(200).send(fragmentData.toString());
-    } else {
-      // TODO
-    }
+    const fragmentData = await fragment.getData();
+    const fragmentType = fragment.mimeType;
+
+    // TODO: If the extension used represents an unknown or unsupported type,
+    // or if the fragment cannot be converted to this type, an HTTP 415 error
+    // is returned instead, with an appropriate message. For example, a plain
+    // text fragment cannot be returned as a PNG.
+
+    res.set('Content-Type', fragmentType);
+    res.set('Access-Control-Expose-Headers', 'Location');
+    res.status(200).send(fragmentData.toString());
   } catch (err) {
-    return res.status(404).json(response.createErrorResponse(404, err.message));
+    res.status(404).json(createErrorResponse(404, err.message));
   }
 };

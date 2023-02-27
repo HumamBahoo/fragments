@@ -1,9 +1,6 @@
-// src/model/fragment.js
-
 // Use crypto.randomUUID() to create unique IDs, see:
 // https://nodejs.org/api/crypto.html#cryptorandomuuidoptions
 const { randomUUID } = require('crypto');
-
 // Use https://www.npmjs.com/package/content-type to create/parse Content-Type headers
 const contentType = require('content-type');
 
@@ -20,23 +17,27 @@ const {
 class Fragment {
   constructor({ id, ownerId, created, updated, type, size = 0 }) {
     if (ownerId == undefined) {
-      throw new Error('ownerId is missing');
-    } else if (type == undefined) {
-      throw new Error('type is missing');
-    } else if (!Fragment.isSupportedType(type)) {
-      throw new Error(`invalid type: ${type}`);
-    } else if (typeof size != 'number') {
-      throw new Error(`invalid size type: ${typeof size}`);
-    } else if (size < 0) {
-      throw new Error(`size cannot be negative: size${size}`);
-    } else {
-      this.ownerId = ownerId;
-      this.type = type;
-      this.size = size;
-      this.id = id || randomUUID();
-      this.created = new Date().toISOString() || created;
-      this.updated = new Date().toISOString() || updated;
+      throw new Error('missing parameter: ownerId');
     }
+    if (type == undefined) {
+      throw new Error('missing parameter: type');
+    }
+    if (!Fragment.isSupportedType(type)) {
+      throw new Error('invalid parameter: type datatype is not supported');
+    }
+    if (size < 0) {
+      throw new Error('parameter size cannot be negative');
+    }
+    if (typeof size != 'number') {
+      throw new Error('invalid parameter: size datatype must be a number');
+    }
+
+    this.id = id || randomUUID();
+    this.ownerId = ownerId;
+    this.type = type;
+    this.size = size;
+    this.created = new Date().toISOString() || created;
+    this.updated = new Date().toISOString() || updated;
   }
 
   /**
@@ -46,13 +47,13 @@ class Fragment {
    * @returns Promise<Array<Fragment>>
    */
   static async byUser(ownerId, expand = false) {
-    const result = await listFragments(ownerId, expand);
+    const res = await listFragments(ownerId, expand);
 
-    if (!result) {
-      throw new Error(`Fragment(s) by user: ${ownerId} not found in db`);
+    if (!res) {
+      throw new Error(`there are no fragments with ownerId:${ownerId} available in db`);
     }
 
-    return Promise.resolve(result);
+    return Promise.resolve(res);
   }
 
   /**
@@ -62,13 +63,13 @@ class Fragment {
    * @returns Promise<Fragment>
    */
   static async byId(ownerId, id) {
-    const result = await readFragment(ownerId, id);
+    const res = await readFragment(ownerId, id);
 
-    if (!result) {
-      throw new Error(`Fragment with id: ${id} not found in db`);
+    if (!res) {
+      throw new Error(`no fragment with ownerId:${ownerId} and id:${id} is found in db`);
     }
 
-    return Promise.resolve(result);
+    return Promise.resolve(res);
   }
 
   /**
@@ -78,7 +79,11 @@ class Fragment {
    * @returns Promise<void>
    */
   static async delete(ownerId, id) {
-    await deleteFragment(ownerId, id);
+    try {
+      await deleteFragment(ownerId, id);
+    } catch (err) {
+      throw new Error(err);
+    }
     return Promise.resolve();
   }
 
@@ -88,7 +93,13 @@ class Fragment {
    */
   async save() {
     this.updated = new Date().toISOString();
-    await writeFragment(this);
+
+    try {
+      await writeFragment(this);
+    } catch (err) {
+      throw new Error(err);
+    }
+
     return Promise.resolve();
   }
 
@@ -97,13 +108,13 @@ class Fragment {
    * @returns Promise<Buffer>
    */
   async getData() {
-    const result = await readFragmentData(this.ownerId, this.id);
+    const res = await readFragmentData(this.ownerId, this.id);
 
-    if (!result) {
-      throw new Error(`fragment with id: ${this.id} not found in db`);
+    if (!res) {
+      throw new Error(`fragment id:${this.id} is not found in db`);
     }
 
-    return Promise.resolve(result);
+    return Promise.resolve(res);
   }
 
   /**
@@ -112,13 +123,13 @@ class Fragment {
    * @returns Promise<void>
    */
   async setData(data) {
-    this.size = data.byteLength;
     this.updated = new Date().toISOString();
+    this.size = data.byteLength;
 
     try {
       await writeFragmentData(this.ownerId, this.id, data);
     } catch (err) {
-      throw new Error(`Failed to write data for fragment with id: ${this.id}`);
+      throw new Error(err);
     }
 
     return Promise.resolve();
@@ -156,11 +167,9 @@ class Fragment {
    * @returns {boolean} true if we support this Content-Type (i.e., type/subtype)
    */
   static isSupportedType(value) {
-    // array of supported types
-    let validTypes = ['text/plain'];
-
-    const result = contentType.parse(value);
-    return validTypes.includes(result.type);
+    let supportedTypesList = ['text/plain'];
+    const res = contentType.parse(value);
+    return supportedTypesList.includes(res.type);
   }
 }
 

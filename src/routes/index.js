@@ -1,44 +1,31 @@
 // src/routes/index.js
 
 const express = require('express');
-
-// Our authentication middleware
-const { authenticate } = require('../authorization/index');
-
-// version and author from package.json
+const { authenticate } = require('../authorization');
 const { version, author } = require('../../package.json');
-const response = require('../response');
+const { createSuccessResponse } = require('../response');
 
-// Create a router that we can use to mount our API
 const router = express.Router();
 
-/**
- * Expose all of our API routes on /v1/* to include an API version.
- * Protect them all so you have to be authenticated in order to access.
- */
+// Expose all of our API routes on /v1/* to include an API version.
 router.use(`/v1`, authenticate(), require('./api'));
 
-/**
- * Define a simple health check route. If the server is running
- * we'll respond with a 200 OK.  If not, the server isn't healthy.
- */
+// Define a simple health check route. If the server is running
+// we'll respond with a 200 OK.  If not, the server isn't healthy.
 router.get('/', (req, res) => {
-  // Client's shouldn't cache this response (always request it fresh)
+  // Clients shouldn't cache this response (always request it fresh)
+  // See: https://developer.mozilla.org/en-US/docs/Web/HTTP/Caching#controlling_caching
   res.setHeader('Cache-Control', 'no-cache');
 
-  // success response details
-  const data = {
-    status: 'ok',
-    author,
-    // Use your own GitHub URL for this...
-    githubUrl: 'https://github.com/HumamBahoo/fragments',
-    version,
-  };
+  const successResponse = createSuccessResponse({
+    author: author,
+    githubUrl: 'https://github.com/humambahoo/fragments',
+    version: version,
+  });
 
-  // create a successful response with the details
-  const createSuccessResponse = response.createSuccessResponse(data);
-
-  res.status(200).json(createSuccessResponse);
+  // Send a 200 'OK' response with info about our repo
+  res.status(200).json(successResponse);
 });
 
+// export our router
 module.exports = router;

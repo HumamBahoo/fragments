@@ -1,3 +1,5 @@
+// settings.json
+
 {
   "editor.insertSpaces": true,
   "editor.tabSize": 2,
@@ -8,5 +10,8 @@
     "source.fixAll": true
   },
   "files.eol": "\n",
-  "files.insertFinalNewline": true
+  "files.insertFinalNewline": true,
+  "[dotenv]": {
+    "editor.defaultFormatter": "foxundermoon.shell-format"
+  }
 }
