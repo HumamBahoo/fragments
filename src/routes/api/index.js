@@ -23,7 +23,7 @@ const rawBody = () => {
 };
 
 // our routes
-router.get('/fragments', require('./get').getFragments);
+router.get('/fragments', require('./get').listUserFragments);
 router.get('/fragments/:id', require('./get').getFragmentDataById);
 router.post('/fragments', rawBody(), require('./post').postFragment);
 

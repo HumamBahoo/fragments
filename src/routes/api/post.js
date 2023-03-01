@@ -7,6 +7,8 @@ const { createSuccessResponse, createErrorResponse } = require('../../response')
 // Post /fragments
 module.exports.postFragment = async (req, res) => {
   if (Buffer.isBuffer(req.body)) {
+    logger.info('Creating a new fragment');
+
     const reqOwnerId = req.user;
     const reqContentType = req.get('content-type');
 
@@ -27,11 +29,11 @@ module.exports.postFragment = async (req, res) => {
     const successResponse = createSuccessResponse({ fragment: newFragment });
     res.status(201).send(successResponse);
 
-    logger.debug(res, 'A new fragment has been created');
+    logger.info('The new fragment has been created and added to db');
   } else {
     const errorResponse = createErrorResponse(415, 'unsupported media type');
     res.status(415).json(errorResponse);
 
-    logger.error('Unable to create a new fragment', errorResponse);
+    logger.error({ errorResponse }, 'Unable to create a new fragment');
   }
 };

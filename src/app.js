@@ -36,7 +36,7 @@ app.use('/', require('./routes'));
 
 // 404 middleware to handle requests for resources that can't be found
 app.use((req, res) => {
-  logger.error({ path: `${req.headers.host}${req.url}` }, 'resource is not found');
+  logger.error({ path: req.headers.host + req.url }, '404, page was not found');
 
   const errorResponse = createErrorResponse(404, 'not found');
   res.status(404).json(errorResponse);

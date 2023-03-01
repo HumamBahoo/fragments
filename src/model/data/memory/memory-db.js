@@ -1,5 +1,7 @@
 // src/model/data/memory/memory-db.js
 
+const logger = require('../../../logger');
+
 const validateKey = (key) => typeof key === 'string';
 
 class MemoryDB {

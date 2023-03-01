@@ -47,13 +47,17 @@ class Fragment {
    * @returns Promise<Array<Fragment>>
    */
   static async byUser(ownerId, expand = false) {
-    const res = await listFragments(ownerId, expand);
+    try {
+      const res = await listFragments(ownerId, expand);
 
-    if (!res) {
-      throw new Error(`there are no fragments with ownerId:${ownerId} available in db`);
+      if (!res) {
+        throw new Error(`there were no fragments with ownerId:${ownerId} available in db`);
+      }
+
+      return Promise.resolve(res);
+    } catch (err) {
+      return Promise.reject(err);
     }
-
-    return Promise.resolve(res);
   }
 
   /**
@@ -63,13 +67,17 @@ class Fragment {
    * @returns Promise<Fragment>
    */
   static async byId(ownerId, id) {
-    const res = await readFragment(ownerId, id);
+    try {
+      const res = await readFragment(ownerId, id);
 
-    if (!res) {
-      throw new Error(`no fragment with ownerId:${ownerId} and id:${id} is found in db`);
+      if (!res) {
+        throw new Error(`no fragment with ownerId:${ownerId} and id:${id} is found in db`);
+      }
+
+      return Promise.resolve(res);
+    } catch (err) {
+      return Promise.reject(err);
     }
-
-    return Promise.resolve(res);
   }
 
   /**
@@ -81,10 +89,10 @@ class Fragment {
   static async delete(ownerId, id) {
     try {
       await deleteFragment(ownerId, id);
+      return Promise.resolve();
     } catch (err) {
-      throw new Error(err);
+      return Promise.reject(err);
     }
-    return Promise.resolve();
   }
 
   /**
@@ -96,11 +104,10 @@ class Fragment {
 
     try {
       await writeFragment(this);
+      return Promise.resolve();
     } catch (err) {
-      throw new Error(err);
+      return Promise.reject(err);
     }
-
-    return Promise.resolve();
   }
 
   /**
@@ -108,13 +115,17 @@ class Fragment {
    * @returns Promise<Buffer>
    */
   async getData() {
-    const res = await readFragmentData(this.ownerId, this.id);
+    try {
+      const res = await readFragmentData(this.ownerId, this.id);
 
-    if (!res) {
-      throw new Error(`fragment id:${this.id} is not found in db`);
+      if (!res) {
+        throw new Error(`fragment id:${this.id} is not found in db`);
+      }
+
+      return Promise.resolve(res);
+    } catch (err) {
+      return Promise.reject(err);
     }
-
-    return Promise.resolve(res);
   }
 
   /**
@@ -128,11 +139,10 @@ class Fragment {
 
     try {
       await writeFragmentData(this.ownerId, this.id, data);
+      return Promise.resolve();
     } catch (err) {
-      throw new Error(err);
+      return Promise.reject(err);
     }
-
-    return Promise.resolve();
   }
 
   /**
