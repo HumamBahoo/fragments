@@ -1,22 +1,17 @@
-# Dockerfile will be used to define instructions necessary 
-# for Docker engine to build an image of the service
+# Stage 01: install dependencies
+################################
+FROM node:18.14.2-alpine3.16@sha256:72c0b366821377f04d816cd0287360e372cc55782d045e557e2640cb8040d3ea AS dependencies
 
-# Every docker file must start with FROM instruction to 
-# to specify the start image.
-FROM node:18.14.2
+# define node env to install prod dependencies only
+ENV NODE_ENV=production
 
-# Metadata about our image by using instruction LABEL
-LABEL maintainer="Humam Bahoo hbahoo@myseneca.ca"
-LABEL description="Fragments node.js microservice"
+# define work directory for our app
+WORKDIR /fragments
 
-# Environment variables defined using ENV instruction
-# These variables can be overwritten at runtime using 
-# flags: --env, -e, or --env-file
+# copy our package*.json dependencies
+COPY package.json package-lock.json /fragments/
 
-# default to use port 8080 in our service
-ENV PORT=8080
-
-# reduce npm spam when installing within docker
+# Reduce npm spam when installing within Docker
 # https://docs.npmjs.com/cli/v8/using-npm/config#loglevel
 ENV NPM_CONFIG_LOGLEVEL=warn
 
@@ -24,32 +19,40 @@ ENV NPM_CONFIG_LOGLEVEL=warn
 # https://docs.npmjs.com/cli/v8/using-npm/config#color
 ENV NPM_CONFIG_COLOR=false
 
-# Define app working directory that we want to create for 
-# our application using WORKDIR instruction
-WORKDIR /app
+# install app dependencies
+RUN npm ci
 
-# COPY instruction to copy files and folders into our image
-# we will copy package.json and package-lock.json files into 
-# /app because we need those dependencies
-COPY package.json package-lock.json /app/
+# Stage 02: setup our app
+#########################
+FROM node:18.14.2-alpine3.16@sha256:72c0b366821377f04d816cd0287360e372cc55782d045e557e2640cb8040d3ea AS setup
 
-# This is another way to do it using a relative path and wildcards
-# COPY package*.json ./
+# define work directory for our app
+WORKDIR /fragments
 
-# RUN instruction is used to execute commands
-# it will execute the command in a new layer on top of the image
-# Install node dependencies defined in package-lock.json
-RUN npm install
+# copy the generated node_modules folder from our dependencies layer
+COPY --from=dependencies /fragments /fragments
 
-# Copy src to /app/src/
-COPY ./src ./src
-
-# Copy our HTPASSWD file
+# copy our source code
+COPY ./src/ /fragments/src/
 COPY ./tests/.htpasswd ./tests/.htpasswd
 
-# CMD isntruction is used to define the command used to start a process
-CMD npm start
+# Stage 03: run our app
+#########################
+FROM node:18.14.2-alpine3.16@sha256:72c0b366821377f04d816cd0287360e372cc55782d045e557e2640cb8040d3ea AS run
 
-# To indicate teh port a container will listen on when running 
-# we use EXPOSE instruction
+# set image metadata
+LABEL maintainer="Humam Bahoo <hbahoo@myseneca.ca>"
+LABEL description="Fragments node.js microservice"
+
+# define work directory for our app
+WORKDIR /fragments
+
+# copy everything from our setup layer
+COPY --from=setup /fragments /fragments
+
+# define our env variables
+ENV PORT=8080
+
+# run our app and expose port 8080
+CMD [ "node" ,"src/index.js"]
 EXPOSE 8080
