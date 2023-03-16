@@ -2,8 +2,12 @@
 
 const express = require('express');
 const router = express.Router();
+
 const contentType = require('content-type');
 const { Fragment } = require('../../model/fragment');
+
+const { listUserFragments, getFragmentDataById, getFragmentInfoById } = require('./get');
+const { postFragment } = require('./post');
 
 // Support sending various Content-Types on the body up to 5M in size
 // We will use a raw body parser for POST, which will give a `Buffer` Object or `{}` at `req.body`
@@ -23,8 +27,9 @@ const rawBody = () => {
 };
 
 // our routes
-router.get('/fragments', require('./get').listUserFragments);
-router.get('/fragments/:id', require('./get').getFragmentDataById);
-router.post('/fragments', rawBody(), require('./post').postFragment);
+router.get('/fragments', listUserFragments);
+router.get('/fragments/:id/info', getFragmentInfoById)
+router.get('/fragments/:id', getFragmentDataById);
+router.post('/fragments', rawBody(), postFragment);
 
 module.exports = router;
