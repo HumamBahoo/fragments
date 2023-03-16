@@ -10,6 +10,7 @@ if (options.level === 'debug') {
     target: 'pino-pretty',
     options: {
       colorize: true,
+      ignore: "req,res"
     },
   };
 }
