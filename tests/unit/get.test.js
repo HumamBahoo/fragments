@@ -2,6 +2,7 @@
 
 const request = require('supertest');
 const app = require('../../src/app');
+const hash = require('../../src/hash');
 const { Fragment } = require('../../src/model/fragment');
 
 describe('GET /v1/fragments', () => {
@@ -26,7 +27,58 @@ describe('GET /v1/fragments', () => {
     expect(Array.isArray(res.body.fragments)).toBe(true);
   });
 
-  // TODO: we'll need to add tests to check the contents of the fragments array later
+  test('all user fragments id should be retrieved in an array', async () => {
+    const fragment1 = await request(app)
+      .post('/v1/fragments')
+      .auth('user1@email.com', 'password1')
+      .set('Content-Type', 'text/plain')
+      .send('This is fragment1');
+
+    const fragment2 = await request(app)
+      .post('/v1/fragments')
+      .auth('user1@email.com', 'password1')
+      .set('Content-Type', 'text/plain')
+      .send('This is fragment2');
+
+    const res = await request(app).get('/v1/fragments').auth('user1@email.com', 'password1');
+
+    expect(res.statusCode).toBe(200);
+    expect(Array.isArray(res.body.fragments)).toBe(true);
+    expect(res.body.fragments.length).toBe(2);
+
+    // deleting created fragments
+    await Fragment.delete(hash('user1@email.com'), res.body.fragments[0]);
+    await Fragment.delete(hash('user1@email.com'), res.body.fragments[1]);
+  });
+});
+
+describe('GET /v1/fragments?expand=1', () => {
+  test('result includes full representation of fragments metadata', async () => {
+    const fragment1 = await request(app)
+      .post('/v1/fragments')
+      .auth('user1@email.com', 'password1')
+      .set('Content-Type', 'text/plain')
+      .send('This is fragment1');
+
+    const fragment2 = await request(app)
+      .post('/v1/fragments')
+      .auth('user1@email.com', 'password1')
+      .set('Content-Type', 'text/plain')
+      .send('This is fragment2');
+
+    const res = await request(app)
+      .get('/v1/fragments?expand=1')
+      .auth('user1@email.com', 'password1');
+
+    expect(res.statusCode).toBe(200);
+    expect(Array.isArray(res.body.fragments)).toBe(true);
+    expect(res.body.fragments[0].id).toBe(fragment1.body.fragment.id);
+    expect(res.body.fragments[1].id).toBe(fragment2.body.fragment.id);
+
+    // deleting created fragments
+    await Fragment.delete(hash('user1@email.com'), res.body.fragments[0].id);
+    await Fragment.delete(hash('user1@email.com'), res.body.fragments[1].id);
+  });
 });
 
 describe('GET /v1/fragments/:id', () => {
@@ -66,5 +118,11 @@ describe('GET /v1/fragments/:id', () => {
 
     expect(res.status).toBe(200);
     expect(res.text).toBe('This is a fragment');
+  });
+});
+
+describe('GET /v1/fragments/:id/info', () => {
+  test('TODO', async () => {
+    // TODO
   });
 });
