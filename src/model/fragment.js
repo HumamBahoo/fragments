@@ -17,19 +17,19 @@ const {
 class Fragment {
   constructor({ id, ownerId, created, updated, type, size = 0 }) {
     if (ownerId == undefined) {
-      throw new Error('missing parameter: ownerId');
+      throw new Error(`missing parameter: ownerId`);
     }
     if (type == undefined) {
-      throw new Error('missing parameter: type');
+      throw new Error(`missing parameter: type`);
     }
     if (!Fragment.isSupportedType(type)) {
-      throw new Error('invalid parameter: type datatype is not supported');
+      throw new Error(`unsupported fragment type: ${type}`);
     }
     if (size < 0) {
-      throw new Error('parameter size cannot be negative');
+      throw new Error('invalid value: size cannot be negative');
     }
     if (typeof size != 'number') {
-      throw new Error('invalid parameter: size datatype must be a number');
+      throw new Error('invalid datatype: size must be a number');
     }
 
     this.id = id || randomUUID();
@@ -48,15 +48,15 @@ class Fragment {
    */
   static async byUser(ownerId, expand = false) {
     try {
-      const res = await listFragments(ownerId, expand);
+      const foundFragments = await listFragments(ownerId, expand);
 
-      if (!res) {
-        throw new Error(`there were no fragments with ownerId:${ownerId} available in db`);
+      if (!foundFragments) {
+        throw new Error(`no fragment with provided user was found in database`);
       }
 
-      return Promise.resolve(res);
+      return Promise.resolve(foundFragments);
     } catch (err) {
-      return Promise.reject(err);
+      throw err.message;
     }
   }
 
@@ -68,15 +68,15 @@ class Fragment {
    */
   static async byId(ownerId, id) {
     try {
-      const res = await readFragment(ownerId, id);
+      const fragment = await readFragment(ownerId, id);
 
-      if (!res) {
-        throw new Error(`no fragment with ownerId:${ownerId} and id:${id} is found in db`);
+      if (!fragment) {
+        throw new Error(`no fragment with provided id was found in database`);
       }
 
-      return Promise.resolve(res);
+      return Promise.resolve(fragment);
     } catch (err) {
-      return Promise.reject(err);
+      throw new Error(`error retrieving fragment: ${err.message}`);
     }
   }
 
@@ -91,7 +91,7 @@ class Fragment {
       await deleteFragment(ownerId, id);
       return Promise.resolve();
     } catch (err) {
-      return Promise.reject(err);
+      throw new Error(`error deleting user fragment from database: ${err.message}`);
     }
   }
 
@@ -100,13 +100,14 @@ class Fragment {
    * @returns Promise<void>
    */
   async save() {
-    this.updated = new Date().toISOString();
-
     try {
+      this.updated = new Date().toISOString();
+
       await writeFragment(this);
+
       return Promise.resolve();
     } catch (err) {
-      return Promise.reject(err);
+      throw new Error(`error saving fragment to database: ${err.message}`);
     }
   }
 
@@ -116,15 +117,15 @@ class Fragment {
    */
   async getData() {
     try {
-      const res = await readFragmentData(this.ownerId, this.id);
+      const fragmentData = await readFragmentData(this.ownerId, this.id);
 
-      if (!res) {
-        throw new Error(`fragment id:${this.id} is not found in db`);
+      if (!fragmentData) {
+        throw new Error(`no fragment data was found in database`);
       }
 
-      return Promise.resolve(res);
+      return Promise.resolve(fragmentData);
     } catch (err) {
-      return Promise.reject(err);
+      throw new Error(`error retrieving fragment data: ${err.message}`);
     }
   }
 
@@ -134,14 +135,15 @@ class Fragment {
    * @returns Promise<void>
    */
   async setData(data) {
-    this.updated = new Date().toISOString();
-    this.size = data.byteLength;
-
     try {
+      this.updated = new Date().toISOString();
+      this.size = data.byteLength;
+
       await writeFragmentData(this.ownerId, this.id, data);
+
       return Promise.resolve();
     } catch (err) {
-      return Promise.reject(err);
+      throw new Error(`error setting fragment data in database: ${err.message}`);
     }
   }
 
@@ -168,7 +170,40 @@ class Fragment {
    * @returns {Array<string>} list of supported mime types
    */
   get formats() {
-    return [this.mimeType];
+    /**
+        Type	            Valid Conversion Extensions
+        text/plain        .txt
+        text/markdown   	.md, .html, .txt
+        text/html       	.html, .txt
+        application/json	.json, .txt
+        image/png         .png, .jpg, .webp, .gif
+        image/jpeg      	.png, .jpg, .webp, .gif
+        image/webp      	.png, .jpg, .webp, .gif
+        image/gif       	.png, .jpg, .webp, .gif
+     */
+
+    switch (this.mimeType) {
+      case 'text/plain':
+        return ['text/plain'];
+
+      case 'text/markdown':
+        return ['text/markdown', 'text/html', 'text/plain'];
+
+      case 'text/html':
+        return ['text/html', 'text/plain'];
+
+      case 'application/json':
+        return ['application/json', 'text/plain'];
+
+      case 'image/png':
+      case 'image/jpeg':
+      case 'image/webp':
+      case 'image/gif':
+        return ['image/png', 'image/jpeg', 'image/webp', 'image/gif'];
+
+      default:
+        return null;
+    }
   }
 
   /**
@@ -177,9 +212,19 @@ class Fragment {
    * @returns {boolean} true if we support this Content-Type (i.e., type/subtype)
    */
   static isSupportedType(value) {
-    let supportedTypesList = ['text/plain', 'application/json'];
-    const res = contentType.parse(value);
-    return supportedTypesList.includes(res.type);
+    const validTypes = [
+      'text/plain',
+      'text/markdown',
+      'text/html',
+      'application/json',
+      'image/png',
+      'image/jpeg',
+      'image/webp',
+      'image/gif',
+    ];
+
+    const parsedType = contentType.parse(value);
+    return validTypes.includes(parsedType.type);
   }
 }
 
