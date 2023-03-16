@@ -5,35 +5,36 @@ const { Fragment } = require('../../model/fragment');
 const { createSuccessResponse, createErrorResponse } = require('../../response');
 
 // Post /fragments
-module.exports.postFragment = async (req, res) => {
+module.exports.postFragment = async (req, res, next) => {
+  logger.info(`Calling POST ${req.originalUrl}`);
+
   if (Buffer.isBuffer(req.body)) {
-    logger.info('Creating a new fragment');
+    const ownerId = req.user;
+    const contentType = req.get('Content-Type');
+    const data = req.body;
 
-    const reqOwnerId = req.user;
-    const reqContentType = req.get('content-type');
+    const createdFragment = new Fragment({ ownerId: ownerId, type: contentType });
 
-    // create, set, and save the new fragment
-    const newFragment = new Fragment({ ownerId: reqOwnerId, type: reqContentType });
-    newFragment.setData(req.body);
-    newFragment.save();
-
-    // setting response headers: 'Location'
-    if (process.env.API_URL == undefined) {
-      res.set('Location', `${req.headers.host}/v1/fragments/${newFragment.id}`);
-    } else {
-      res.set('Location', `${process.env.API_URL}/v1/fragments/${newFragment.id}`);
+    try {
+      await createdFragment.setData(data);
+      await createdFragment.save();
+    } catch (err) {
+      next(err);
     }
 
+    // setup and send response
+    let baseUrl;
+    process.env.API_URL ? (baseUrl = process.env.API_URL) : (baseUrl = req.headers.host);
+
+    res.set('Location', `${baseUrl}/v1/fragments/${createdFragment.id}`);
     res.set('Access-Control-Expose-Headers', 'Location');
 
-    const successResponse = createSuccessResponse({ fragment: newFragment });
-    res.status(201).send(successResponse);
-
-    logger.info('The new fragment has been created and added to db');
+    const successResponse = createSuccessResponse({ fragment: createdFragment });
+    logger.info({ successResponse }, `Success creating a new fragment`);
+    res.status(201).json(successResponse);
   } else {
     const errorResponse = createErrorResponse(415, 'unsupported media type');
+    logger.error({ errorResponse }, 'Unsupported media type');
     res.status(415).json(errorResponse);
-
-    logger.error({ errorResponse }, 'Unable to create a new fragment');
   }
 };
