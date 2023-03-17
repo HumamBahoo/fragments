@@ -28,9 +28,7 @@ describe('GET /v1/fragments', () => {
   });
 
   test('incorrect credentials are denied', async () => {
-    const res = await request(app)
-      .get('/v1/fragments')
-      .auth('invalid@email.com', 'incorrect_password');
+    const res = await request(app).get('/v1/fragments').auth('invalid@email.com', 'incorrect_password');
 
     expect(res.statusCode).toBe(401);
   });
@@ -102,9 +100,7 @@ describe('GET /v1/fragments?expand=1', () => {
         .send('This is fragment2')
     ).body.fragment.id;
 
-    const res = await request(app)
-      .get('/v1/fragments?expand=1')
-      .auth('user1@email.com', 'password1');
+    const res = await request(app).get('/v1/fragments?expand=1').auth('user1@email.com', 'password1');
     const resFragments = res.body.fragments;
 
     expect(res.statusCode).toBe(200);
@@ -125,17 +121,13 @@ describe('GET /v1/fragments/:id', () => {
   });
 
   test('incorrect credentials are denied', async () => {
-    const res = await request(app)
-      .get('/v1/fragments/id')
-      .auth('invalid@email.com', 'incorrect_password');
+    const res = await request(app).get('/v1/fragments/id').auth('invalid@email.com', 'incorrect_password');
 
     expect(res.statusCode).toBe(401);
   });
 
   test('requesting a non-existent fragment should throw', async () => {
-    const res = await request(app)
-      .get('/v1/fragments/no-such-id')
-      .auth('user1@email.com', 'password1');
+    const res = await request(app).get('/v1/fragments/no-such-id').auth('user1@email.com', 'password1');
 
     expect(res.statusCode).toBe(404);
   });
@@ -149,12 +141,26 @@ describe('GET /v1/fragments/:id', () => {
 
     const createdFragmentId = postResponse.body.fragment.id;
 
-    const res = await request(app)
-      .get(`/v1/fragments/${createdFragmentId}`)
-      .auth('user1@email.com', 'password1');
+    const res = await request(app).get(`/v1/fragments/${createdFragmentId}`).auth('user1@email.com', 'password1');
 
     expect(res.status).toBe(200);
     expect(res.text).toBe('This is a fragment');
+  });
+
+  test('an md fragment can be converted to html', async () => {
+    const data = '# Markdown';
+
+    const postResponse = await request(app)
+      .post('/v1/fragments')
+      .auth('user1@email.com', 'password1')
+      .set('content-type', 'text/markdown')
+      .send(data);
+
+    const createdFragmentId = postResponse.body.fragment.id;
+
+    const res = await request(app).get(`/v1/fragments/${createdFragmentId}.html`).auth('user1@email.com', 'password1');
+    expect(res.status).toBe(200);
+    expect(res.text).toBe('<h1>Markdown</h1>\n');
   });
 });
 
@@ -173,9 +179,7 @@ describe('GET /v1/fragments/:id/info', () => {
 
     const postedFragmentId = postResponse.body.fragment.id;
 
-    const res = await request(app)
-      .get(`/v1/fragments/${postedFragmentId}/info`)
-      .auth('user1@email.com', 'password1');
+    const res = await request(app).get(`/v1/fragments/${postedFragmentId}/info`).auth('user1@email.com', 'password1');
 
     const resFragment = res.body.fragment;
 
