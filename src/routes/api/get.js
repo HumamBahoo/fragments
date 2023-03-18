@@ -67,7 +67,14 @@ module.exports.getFragmentDataById = async (req, res) => {
         if (fragmentType == 'text/markdown' && extension == 'html') {
           convertedData = md.render(rawData.toString());
 
-          logger.info('Fragment data was converted');
+          logger.info('Fragment data was converted from md to html');
+
+          return res.status(200).set('Content-Type', extensionContentType).send(convertedData);
+        } else if (fragmentType == 'application/json' && extension == 'txt') {
+          // TODO: improve to remove {},',', "". Keeping related text only.
+          convertedData = rawData.toString();
+
+          logger.info('Fragment data was converted json to txt');
 
           return res.status(200).set('Content-Type', extensionContentType).send(convertedData);
         } else {
