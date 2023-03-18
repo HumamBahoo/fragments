@@ -70,11 +70,17 @@ module.exports.getFragmentDataById = async (req, res) => {
           logger.info('Fragment data was converted from md to html');
 
           return res.status(200).set('Content-Type', extensionContentType).send(convertedData);
+        } else if (fragmentType == 'text/html' && extension == 'txt') {
+          convertedData = rawData.toString();
+
+          logger.info('Fragment data was converted from html to txt');
+
+          return res.status(200).set('Content-Type', extensionContentType).send(convertedData);
         } else if (fragmentType == 'application/json' && extension == 'txt') {
           // TODO: improve to remove {},',', "". Keeping related text only.
           convertedData = rawData.toString();
 
-          logger.info('Fragment data was converted json to txt');
+          logger.info('Fragment data was converted from json to txt');
 
           return res.status(200).set('Content-Type', extensionContentType).send(convertedData);
         } else {
