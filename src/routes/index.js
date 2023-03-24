@@ -5,6 +5,7 @@ const { authenticate } = require('../authorization');
 const { version, author } = require('../../package.json');
 const { createSuccessResponse } = require('../response');
 const logger = require('../logger');
+const { hostname } = require('os');
 
 const router = express.Router();
 
@@ -26,6 +27,9 @@ router.get('/', (req, res) => {
       author: author,
       githubUrl: 'https://github.com/HumamBahoo/fragments',
       version: version,
+
+      // Include the hostname in the response
+      hostname: hostname(),
     })
   );
 });
