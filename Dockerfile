@@ -50,9 +50,16 @@ WORKDIR /fragments
 # copy everything from our setup layer
 COPY --from=setup /fragments /fragments
 
+# install curl for our Healthcheck
+RUN apk add curl
+
 # define our env variables
 ENV PORT=8080
 
 # run our app and expose port 8080
 CMD [ "node" ,"src/index.js"]
 EXPOSE 8080
+
+# define our healthcheck
+HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 \
+  CMD curl --fail localhost:8080 || exit 1
