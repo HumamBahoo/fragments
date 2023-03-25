@@ -82,14 +82,13 @@ jobs:
       # (i.e., fragments-definition.json) to use the newly
       # updated Docker Image to use (i.e., the tag we just pushed to ECR).
       # We can also update/set the environment variables if we want.
-      - name: Fill in the new image ID in the Amazon ECS task Definition
+      - name: Fill in the new image ID in the Amazon ECS task definition
         id: update-task-def
         uses: aws-actions/amazon-ecs-render-task-definition@v1
         env:
-          ECR_REGISTRY: ${{steps.login-ecr.outputs.registry}}
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
           ECR_REPO: fragments
-          VERSION_TAG: ${{github.ref_name}}
-
+          VERSION_TAG: ${{ github.ref_name }}
         with:
           task-definition: fragments-definition.json
           container-name: fragments
@@ -104,6 +103,11 @@ jobs:
             AWS_SESSION_TOKEN=${{secrets.AWS_SESSION_TOKEN}}
             AWS_REGION=us-east-1
             PORT=${{ secrets.PORT }}
+            AWS_COGNITO_CLIENT_ID=${{ secrets.AWS_COGNITO_CLIENT_ID }}
+            AWS_COGNITO_HOSTED_UI_DOMAIN=${{ secrets.AWS_COGNITO_HOSTED_UI_DOMAIN }}
+            AWS_COGNITO_POOL_ID=${{ secrets.AWS_COGNITO_POOL_ID }}
+            OAUTH_SIGN_IN_REDIRECT_URL=${{secrets.OAUTH_SIGN_IN_REDIRECT_URL}}
+            OAUTH_SIGN_OUT_REDIRECT_URL=${{secrets.OAUTH_SIGN_OUT_REDIRECT_URL}}
 
       - name: Deploy Amazon ECS task definition
         uses: aws-actions/amazon-ecs-deploy-task-definition@v1
