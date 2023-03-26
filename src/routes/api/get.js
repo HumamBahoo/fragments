@@ -45,60 +45,42 @@ module.exports.getFragmentDataById = async (req, res) => {
 
   try {
     const fragment = await Fragment.byId(ownerId, fragmentId);
-    const fragmentType = fragment.mimeType;
-    logger.debug({ fragment, fragmentType }, 'Requested fragment was found');
+    const fragmentType = fragment.type;
+    const fragmentMimeType = fragment.mimeType;
+
+    logger.debug({ fragment, fragmentType, fragmentMimeType }, 'Requested fragment was found');
 
     const rawData = await fragment.getData();
     logger.debug({ rawData }, 'Fragment data has been retrieved');
 
-    // attempt to convert if conversion extension was provided
+    // if extension
     if (extension) {
       const extensionContentType = getExtensionContentType(extension);
-      logger.debug({ from: fragmentType, to: extensionContentType }, 'Converting fragment');
+      logger.debug({ from: fragmentMimeType, to: extensionContentType }, 'Converting fragment');
 
+      // validate if fragment can be converted
       if (fragment.formats.includes(extensionContentType)) {
-        // TODO: Convert and send.
-        // For now our logic only supports converting md to html.
-        // Later the else condition should be removed as rawData
-        // will never be returned here
+        res.setHeader('Content-Type', extensionContentType);
+        const convertedData = convertData(rawData, fragmentMimeType, extension);
 
-        let convertedData;
-
-        if (fragmentType == 'text/markdown' && extension == 'html') {
-          convertedData = md.render(rawData.toString());
-
-          logger.info('Fragment data was converted from md to html');
-
-          return res.status(200).set('Content-Type', extensionContentType).send(convertedData);
-        } else if (fragmentType == 'text/html' && extension == 'txt') {
-          convertedData = rawData.toString();
-
-          logger.info('Fragment data was converted from html to txt');
-
-          return res.status(200).set('Content-Type', extensionContentType).send(convertedData);
-        } else if (fragmentType == 'application/json' && extension == 'txt') {
-          // TODO: improve to remove {},',', "". Keeping related text only.
-          convertedData = rawData.toString();
-
-          logger.info('Fragment data was converted from json to txt');
-
-          return res.status(200).set('Content-Type', extensionContentType).send(convertedData);
-        } else {
-          return res.status(200).set('Content-Type', fragmentType).send(rawData);
-        }
+        return res.status(200).send(convertedData);
       } else {
-        const errorResponse = createErrorResponse(415, `a ${fragmentType} fragment cannot be return as a ${extension}`);
+        const errorResponse = createErrorResponse(
+          415,
+          `a ${fragmentMimeType} fragment cannot be return as a ${extension}`
+        );
         logger.error({ errorResponse }, 'Invalid extension/conversion');
+
         return res.status(415).json(errorResponse);
       }
-    }
-    // send raw data
-    else {
-      return res.status(200).set('Content-Type', fragmentType).send(rawData);
+    } else {
+      res.setHeader('Content-Type', fragmentType);
+      return res.status(200).send(rawData);
     }
   } catch (err) {
     const errorResponse = createErrorResponse(404, err.message);
-    logger.error({ errorResponse }, 'Failed to retrieve requested fragment data');
+    logger.error({ errorResponse }, 'Fragment retrieval failed');
+
     return res.status(404).json(errorResponse);
   }
 };
@@ -147,4 +129,24 @@ const getExtensionContentType = (extension) => {
     default:
       return null;
   }
+};
+
+const convertData = (data, from, to) => {
+  let convertedData;
+
+  if (from == 'text/markdown' && to == 'html') {
+    convertedData = md.render(data.toString());
+    logger.info('Fragment data was converted from md to html');
+  } else if (from == 'text/html' && to == 'txt') {
+    convertedData = data.toString();
+    logger.info('Fragment data was converted from html to txt');
+  } else if (from == 'application/json' && to == 'txt') {
+    // TODO: improve to remove {},',', "". Keeping related text only.
+    convertedData = data.toString();
+    logger.info('Fragment data was converted from json to txt');
+  } else {
+    convertedData = data;
+  }
+
+  return convertedData;
 };
