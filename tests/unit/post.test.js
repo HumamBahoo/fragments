@@ -12,9 +12,7 @@ describe('POST /fragments', () => {
   });
 
   test('incorrect credentials should be denied', async () => {
-    const res = await request(app)
-      .post('/v1/fragments')
-      .auth('invalid@email.com', 'incorrect_password');
+    const res = await request(app).post('/v1/fragments').auth('invalid@email.com', 'incorrect_password');
 
     expect(res.statusCode).toBe(401);
   });
@@ -40,7 +38,7 @@ describe('POST /fragments', () => {
     expect(res.body.error.message).toBe('invalid media type');
   });
 
-  test('requests with an unsupported media types should throw', async () => {
+  test('requests with an unsupported media types should respond with error', async () => {
     const res = await request(app)
       .post('/v1/fragments')
       .auth('user1@email.com', 'password1')

@@ -147,6 +147,24 @@ describe('GET /v1/fragments/:id', () => {
     expect(res.text).toBe('This is a fragment');
   });
 
+  test('incompatible fragment conversion should throw', async () => {
+    const data = '# Markdown';
+
+    const postResponse = await request(app)
+      .post('/v1/fragments')
+      .auth('user1@email.com', 'password1')
+      .set('content-type', 'text/markdown')
+      .send(data);
+
+    const createdFragmentId = postResponse.body.fragment.id;
+
+    const res = await request(app).get(`/v1/fragments/${createdFragmentId}.gif`).auth('user1@email.com', 'password1');
+
+    expect(res.status).toBe(415);
+    expect(res.body.error.code).toBe(415);
+    expect(res.body.error.message).toBeDefined;
+  });
+
   test('an md fragment can be converted to html', async () => {
     const data = '# Markdown';
 
@@ -186,5 +204,13 @@ describe('GET /v1/fragments/:id/info', () => {
     expect(res.status).toBe(200);
     expect(resFragment.id).toEqual(postedFragmentId);
     expect(typeof resFragment).toBe('object');
+  });
+
+  test('requesting a non-existent fragment should throw', async () => {
+    const res = await request(app).get(`/v1/fragments/non-existent/info`).auth('user1@email.com', 'password1');
+
+    expect(res.status).toBe(404);
+    expect(res.body.error.code).toBe(404);
+    expect(res.body.error.message).toBeDefined;
   });
 });
