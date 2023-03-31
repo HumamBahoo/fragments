@@ -107,6 +107,14 @@ describe('GET /v1/fragments?expand=1', () => {
     expect(resFragments[0].id).toBe(fragmentId1);
     expect(resFragments[1].id).toBe(fragmentId2);
   });
+
+  test('returns an empty array if user has no fragments', async () => {
+    const res = await request(app).get('/v1/fragments?expand=1').auth('user1@email.com', 'password1');
+
+    expect(res.status).toBe(200);
+    expect(Array.isArray(res.body.fragments)).toBe(true);
+    expect(res.body.fragments.length).toBe(0);
+  });
 });
 
 describe('GET /v1/fragments/:id', () => {

@@ -23,7 +23,7 @@ module.exports.listUserFragments = async (req, res, next) => {
     const successResponse = createSuccessResponse({ fragments: foundFragments });
 
     if (foundFragments.length == 0) {
-      logger.info('User has no fragments');
+      logger.info({ foundFragments }, 'User has no fragments');
     } else {
       logger.info({ foundFragments }, 'User fragments have been retrieved');
     }
