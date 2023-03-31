@@ -25,7 +25,12 @@
       "command": [],
       "linuxParameters": null,
       "cpu": 256,
-      "environment": [],
+      "environment": [
+        {
+          "name": "AWS_S3_BUCKET_NAME",
+          "value": "humam.bahoo-fragments"
+        }
+      ],
       "resourceRequirements": null,
       "ulimits": null,
       "dnsServers": null,
@@ -59,7 +64,7 @@
   ],
   "placementConstraints": [],
   "memory": "512",
-  "taskRoleArn": null,
+  "taskRoleArn": "arn:aws:iam::463308028392:role/LabRole",
   "compatibilities": ["EC2", "FARGATE"],
   "taskDefinitionArn": "arn:aws:ecs:us-east-1:463308028392:task-definition/fragments-task:1",
   "family": "fragments-task",
