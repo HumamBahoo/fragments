@@ -1,11 +1,11 @@
 // src/routes/api/put.js
 
 const logger = require('../../logger');
-const { Fragment } = require('../../model/fragment');
-const { createSuccessResponse, createErrorResponse } = require('../../response');
+// const { Fragment } = require('../../model/fragment');
+// const { createSuccessResponse, createErrorResponse } = require('../../response');
 
 // Post /fragments
-module.exports.putFragment = async (req, res, next) => {
+module.exports.putFragment = async (req, res) => {
   logger.info(`Calling PUT ${req.originalUrl}`);
   res.send('This is a PUT request');
 };
