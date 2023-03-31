@@ -20,7 +20,6 @@ module.exports.listUserFragments = async (req, res, next) => {
   // retrieve user fragments
   try {
     const foundFragments = await Fragment.byUser(ownerId, expand);
-
     const successResponse = createSuccessResponse({ fragments: foundFragments });
 
     if (foundFragments.length == 0) {
