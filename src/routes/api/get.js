@@ -51,7 +51,7 @@ module.exports.getFragmentDataById = async (req, res) => {
     logger.debug({ fragment, fragmentType, fragmentMimeType }, 'Requested fragment was found');
 
     const rawData = await fragment.getData();
-    logger.debug({ rawData }, 'Fragment data has been retrieved');
+    logger.debug('Fragment data has been retrieved');
 
     // if extension
     if (extension) {
@@ -89,14 +89,12 @@ module.exports.getFragmentInfoById = async (req, res) => {
   const fragmentId = req.params.id;
   const ownerId = req.user;
 
-  let foundFragment;
-
   logger.info({ fragmentId, ownerId }, `Calling GET ${req.originalUrl}`);
 
   // get the fragment
   try {
-    foundFragment = await Fragment.byId(ownerId, fragmentId);
-    logger.debug({ foundFragment }, 'Fragment was found');
+    const foundFragment = await Fragment.byId(ownerId, fragmentId);
+    logger.info({ foundFragment }, 'Fragment was found');
 
     const successResponse = createSuccessResponse({ fragment: foundFragment });
     res.status(200).json(successResponse);
@@ -131,6 +129,7 @@ const getExtensionContentType = (extension) => {
   }
 };
 
+// convert data
 const convertData = (data, from, to) => {
   let convertedData;
 
