@@ -5,6 +5,6 @@
  */
 
 // memory strategy
-module.exports = require('./memory');
+module.exports = process.env.AWS_REGION ? require('./aws') : require('./memory');
 
 // TODO: add other strategies here, when implemented
