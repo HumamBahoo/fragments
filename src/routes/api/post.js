@@ -5,39 +5,31 @@ const { Fragment } = require('../../model/fragment');
 const { createSuccessResponse, createErrorResponse } = require('../../response');
 
 // Post /v1/fragments
-module.exports.postFragment = async (req, res, next) => {
-  logger.info(`Calling POST ${req.originalUrl}`);
+module.exports.postFragment = async (req, res) => {
+  const ownerId = req.user;
+  const type = req.get('Content-Type');
+  const body = req.body;
 
-  if (Buffer.isBuffer(req.body)) {
-    const ownerId = req.user;
-    const contentType = req.get('Content-Type');
-    const data = req.body;
+  logger.info({ ownerId, type }, `Calling POST ${req.originalUrl}`);
 
-    const newFragment = new Fragment({ ownerId: ownerId, type: contentType });
+  try {
+    const fragment = new Fragment({ ownerId: ownerId, type: type });
+    await fragment.setData(body);
+    await fragment.save();
 
-    try {
-      await newFragment.setData(data);
-      await newFragment.save();
+    let baseUrl;
+    process.env.API_URL ? (baseUrl = process.env.API_URL) : (baseUrl = req.headers.host);
 
-      // setup baseUrl
-      let baseUrl;
-      process.env.API_URL ? (baseUrl = process.env.API_URL) : (baseUrl = req.headers.host);
+    res.set('Location', `${baseUrl}/v1/fragments/${fragment.id}`);
+    res.set('Access-Control-Expose-Headers', 'Location');
 
-      // setup response
-      res.set('Location', `${baseUrl}/v1/fragments/${newFragment.id}`);
-      res.set('Access-Control-Expose-Headers', 'Location');
+    const successResponse = createSuccessResponse({ fragment: fragment });
+    logger.debug({ successResponse }, 'A new fragment has been created');
 
-      // send response
-      const successResponse = createSuccessResponse({ fragment: newFragment });
-      logger.info({ successResponse }, 'A new fragment has been created');
-
-      return res.status(201).json(successResponse);
-    } catch (err) {
-      next(err);
-    }
-  } else {
-    const errorResponse = createErrorResponse(415, 'unsupported media type');
-    logger.error({ errorResponse }, 'Invalid data');
-    return res.status(415).json(errorResponse);
+    res.status(201).json(successResponse);
+  } catch (err) {
+    const errorResponse = createErrorResponse(415, 'Unsupported content type');
+    logger.warn({ errorResponse }, 'Failed to create a new fragment');
+    res.status(415).json(errorResponse);
   }
 };
