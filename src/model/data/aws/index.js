@@ -1,6 +1,5 @@
 // src/model/data/aws/index.js
 
-// XXX: temporary use of memory-db until we add DynamoDB
 const s3Client = require('./s3Client');
 const ddbDocClient = require('./ddbDocClient');
 const { PutObjectCommand, GetObjectCommand, DeleteObjectCommand } = require('@aws-sdk/client-s3');
