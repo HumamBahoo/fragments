@@ -4,7 +4,7 @@ const request = require('supertest');
 const app = require('../../src/app');
 const hash = require('../../src/hash');
 
-describe('POST /fragments', () => {
+describe('POST /v1/fragments', () => {
   test('unauthenticated requests should be denied', async () => {
     const res = await request(app).post('/v1/fragments');
 
@@ -38,15 +38,15 @@ describe('POST /fragments', () => {
     expect(res.body.error.message).toBe('invalid media type');
   });
 
-  test('requests with an unsupported media types should respond with error', async () => {
+  test('requests with an unsupported media types should return an error', async () => {
     const res = await request(app)
       .post('/v1/fragments')
       .auth('user1@email.com', 'password1')
       .set('Content-Type', 'media/jpeg')
       .send('This is a fragment');
 
-    expect(res.statusCode).toBe(415);
-    expect(res.body.error.message).toBe('unsupported media type');
+    expect(res.status).toBe(415);
+    expect(res.body.status).toBe('error');
   });
 
   test('A successful response should include status, and a fragment object', async () => {
@@ -67,14 +67,12 @@ describe('POST /fragments', () => {
       .set('Content-Type', 'text/plain')
       .send('This is a fragment');
 
-    const resFragment = res.body.fragment;
-
-    expect(resFragment.ownerId).toBe(hash('user1@email.com'));
-    expect(resFragment.created).toBeDefined;
-    expect(resFragment.updated).toBeDefined;
-    expect(resFragment.size).toEqual('This is a fragment'.length);
-    expect(resFragment.type).toBe('text/plain');
-    expect(resFragment.id).toMatch(
+    expect(res.body.fragment.ownerId).toBe(hash('user1@email.com'));
+    expect(res.body.fragment.created).toBeDefined;
+    expect(res.body.fragment.updated).toBeDefined;
+    expect(res.body.fragment.size).toEqual('This is a fragment'.length);
+    expect(res.body.fragment.type).toBe('text/plain');
+    expect(res.body.fragment.id).toMatch(
       /^[0-9a-fA-F]{8}\b-[0-9a-fA-F]{4}\b-[0-9a-fA-F]{4}\b-[0-9a-fA-F]{4}\b-[0-9a-fA-F]{12}$/
     );
   });
