@@ -5,7 +5,7 @@ const app = require('../../src/app');
 
 describe('DELETE /v1/fragments/:id', () => {
   test('unauthenticated requests are denied', async () => {
-    const res = await request(app).del('/v1/fragments/id');
+    const res = await request(app).delete('/v1/fragments/id');
     expect(res.statusCode).toBe(401);
   });
 
@@ -24,14 +24,14 @@ describe('DELETE /v1/fragments/:id', () => {
     const createdFragmentId = postResponse.body.fragment.id;
 
     // delete
-    const res = await request(app).del(`/v1/fragments/${createdFragmentId}`).auth('user1@email.com', 'password1');
+    const res = await request(app).delete(`/v1/fragments/${createdFragmentId}`).auth('user1@email.com', 'password1');
 
     expect(res.status).toBe(200);
     expect(res.body.status).toBe('ok');
   });
 
   test('deleting a non-existent fragment should throw', async () => {
-    const res = await request(app).del('/v1/fragments/non-existent').auth('user1@email.com', 'password1');
+    const res = await request(app).delete('/v1/fragments/non-existent').auth('user1@email.com', 'password1');
 
     expect(res.status).toBe(404);
     expect(res.body.status).toBe('error');
