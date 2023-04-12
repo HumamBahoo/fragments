@@ -18,4 +18,4 @@ HTTP/1.1 415
 [Asserts]
 jsonpath "$.status" == "error"
 jsonpath "$.error.code" == 415
-jsonpath "$.error.message" == "unsupported media type"
+jsonpath "$.error.message" == "Unsupported media type"
