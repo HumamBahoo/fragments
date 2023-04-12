@@ -3,104 +3,95 @@
 const { Fragment } = require('../../model/fragment');
 const { createSuccessResponse, createErrorResponse } = require('../../response');
 const logger = require('../../logger');
-var md = require('markdown-it')();
+const md = require('markdown-it')();
+const { htmlToText } = require('html-to-text');
+const sharp = require('sharp');
 
 // Get a list of fragments for the current user
 module.exports.listUserFragments = async (req, res, next) => {
   const ownerId = req.user;
-  let expand = false;
-
-  // validate if expand is set to true
-  if (req.query['expand'] == '1') {
-    expand = true;
-  }
+  const expand = req.query.expand == 1 ? true : false;
 
   logger.info({ ownerId, expand }, `Calling GET ${req.originalUrl}`);
 
-  // retrieve user fragments
   try {
-    const foundFragments = await Fragment.byUser(ownerId, expand);
-    const successResponse = createSuccessResponse({ fragments: foundFragments });
+    const fragments = await Fragment.byUser(ownerId, expand);
 
-    if (foundFragments.length == 0) {
-      logger.info({ foundFragments }, 'User has no fragments');
+    if (fragments.length == 0) {
+      logger.debug({ fragments }, 'User has no fragments');
     } else {
-      logger.info({ foundFragments }, 'User fragments have been retrieved');
+      logger.debug({ fragments }, 'User fragments have been retrieved');
     }
 
-    return res.status(200).json(successResponse);
+    const successResponse = createSuccessResponse({ fragments: fragments });
+    res.status(200).json(successResponse);
   } catch (err) {
-    logger.error({ err }, "Failed to retrieve user's fragments");
+    logger.warn({ err }, "Failed to retrieve user's fragments");
     next(err);
   }
 };
 
 // Get fragment data by Id
 module.exports.getFragmentDataById = async (req, res) => {
-  const [fragmentId, extension] = req.params.id.split('.');
   const ownerId = req.user;
+  const [id, extension] = req.params.id.split('.');
 
-  logger.info({ fragmentId, ownerId, extension }, `Calling GET ${req.originalUrl}`);
+  logger.info({ id, ownerId, extension }, `Calling GET ${req.originalUrl}`);
 
   try {
-    const fragment = await Fragment.byId(ownerId, fragmentId);
-    const fragmentType = fragment.type;
-    const fragmentMimeType = fragment.mimeType;
+    const fragment = await Fragment.byId(ownerId, id);
+    logger.debug({ fragment }, 'Fragment was found');
 
-    logger.debug({ fragment, fragmentType, fragmentMimeType }, 'Requested fragment was found');
-
-    const rawData = await fragment.getData();
+    const data = await fragment.getData();
     logger.debug('Fragment data has been retrieved');
 
-    // if extension
+    // if extension was included, attempt to convert data and then return it
     if (extension) {
-      const extensionContentType = getExtensionContentType(extension);
-      logger.debug({ from: fragmentMimeType, to: extensionContentType }, 'Converting fragment');
+      const extensionType = getExtensionContentType(extension);
+      logger.info({ from: fragment.mimeType, to: extensionType }, 'Converting fragment');
 
-      // validate if fragment can be converted
-      if (fragment.formats.includes(extensionContentType)) {
-        res.setHeader('Content-Type', extensionContentType);
-        const convertedData = convertData(rawData, fragmentMimeType, extension);
+      if (fragment.formats.includes(extensionType)) {
+        const convertedData = await convertData(data, fragment.mimeType, extension);
 
-        return res.status(200).send(convertedData);
+        res.setHeader('Content-Type', extensionType);
+        res.status(200).send(convertedData);
       } else {
-        const errorResponse = createErrorResponse(
-          415,
-          `a ${fragmentMimeType} fragment cannot be return as a ${extension}`
-        );
-        logger.error({ errorResponse }, 'Invalid extension/conversion');
+        const message = `a ${fragment.mimeType} fragment cannot be return as a ${extension}`;
+        const errorResponse = createErrorResponse(415, message);
 
-        return res.status(415).json(errorResponse);
+        logger.error({ errorResponse }, 'Invalid operation');
+        res.status(415).json(errorResponse);
       }
-    } else {
-      res.setHeader('Content-Type', fragmentType);
-      return res.status(200).send(rawData);
+    }
+    // otherwise return raw fragment data with its type
+    else {
+      res.setHeader('Content-Type', fragment.type);
+      return res.status(200).send(data);
     }
   } catch (err) {
     const errorResponse = createErrorResponse(404, err.message);
-    logger.error({ errorResponse }, 'Fragment retrieval failed');
-
-    return res.status(404).json(errorResponse);
+    logger.warn({ id, errorResponse }, 'Failed to retrieve fragment');
+    res.status(404).json(err.message);
   }
 };
 
 module.exports.getFragmentInfoById = async (req, res) => {
-  const fragmentId = req.params.id;
+  const id = req.params.id;
   const ownerId = req.user;
 
-  logger.info({ fragmentId, ownerId }, `Calling GET ${req.originalUrl}`);
+  logger.info({ id, ownerId }, `Calling GET ${req.originalUrl}`);
 
-  // get the fragment
   try {
-    const foundFragment = await Fragment.byId(ownerId, fragmentId);
-    logger.info({ foundFragment }, 'Fragment was found');
+    const fragment = await Fragment.byId(ownerId, id);
+    logger.info({ fragment }, 'Fragment was found');
 
-    const successResponse = createSuccessResponse({ fragment: foundFragment });
+    const successResponse = createSuccessResponse({ fragment: fragment });
     res.status(200).json(successResponse);
   } catch (err) {
     const errorResponse = createErrorResponse(404, err.message);
+
     logger.error({ errorResponse }, 'Failed to retrieve requested fragment');
-    return res.status(404).json(errorResponse);
+    res.status(404).json(errorResponse);
   }
 };
 
@@ -129,22 +120,81 @@ const getExtensionContentType = (extension) => {
 };
 
 // convert data
-const convertData = (data, from, to) => {
-  let convertedData;
+const convertData = async (data, from, to) => {
+  let convertedData = data;
 
-  if (from == 'text/markdown' && to == 'html') {
-    convertedData = md.render(data.toString());
-    logger.info('Fragment data was converted from md to html');
-  } else if (from == 'text/html' && to == 'txt') {
-    convertedData = data.toString();
-    logger.info('Fragment data was converted from html to txt');
-  } else if (from == 'application/json' && to == 'txt') {
-    // TODO: improve to remove {},',', "". Keeping related text only.
-    convertedData = data.toString();
-    logger.info('Fragment data was converted from json to txt');
-  } else {
-    convertedData = data;
+  switch (from) {
+    case 'text/markdown':
+      if (to == 'txt') {
+        convertedData = md.render(data.toString());
+        convertedData = htmlToText(convertedData.toString(), { wordwrap: 150 });
+      }
+      if (to == 'html') {
+        convertedData = md.render(data.toString());
+      }
+      break;
+
+    case 'text/html':
+      if (to == 'txt') {
+        convertedData = htmlToText(data.toString(), { wordwrap: 130 });
+      }
+      break;
+
+    case 'application/json':
+      if (to == 'txt') {
+        convertedData = JSON.parse(data.toString());
+      }
+      break;
+
+    case 'image/png':
+      if (to == 'jpg') {
+        convertedData = await sharp(data).jpeg().toBuffer();
+      }
+      if (to == 'webp') {
+        convertedData = await sharp(data).webp().toBuffer();
+      }
+      if (to == 'gif') {
+        convertedData = await sharp(data).gif().toBuffer();
+      }
+      break;
+
+    case 'image/jpeg':
+      if (to == 'png') {
+        convertedData = await sharp(data).png().toBuffer();
+      }
+      if (to == 'webp') {
+        convertedData = await sharp(data).webp().toBuffer();
+      }
+      if (to == 'gif') {
+        convertedData = await sharp(data).gif().toBuffer();
+      }
+      break;
+
+    case 'image/webp':
+      if (to == 'png') {
+        convertedData = await sharp(data).png().toBuffer();
+      }
+      if (to == 'jpg') {
+        convertedData = await sharp(data).jpeg().toBuffer();
+      }
+      if (to == 'gif') {
+        convertedData = await sharp(data).gif().toBuffer();
+      }
+      break;
+
+    case 'image/gif':
+      if (to == 'png') {
+        convertedData = await sharp(data).png().toBuffer();
+      }
+      if (to == 'jpg') {
+        convertedData = await sharp(data).jpeg().toBuffer();
+      }
+      if (to == 'webp') {
+        convertedData = await sharp(data).webp().toBuffer();
+      }
+      break;
   }
 
-  return convertedData;
+  logger.debug(`Fragment data was successfully converted from ${from} to ${to}`);
+  return Promise.resolve(convertedData);
 };
