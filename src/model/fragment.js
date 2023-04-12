@@ -74,16 +74,11 @@ class Fragment {
         throw new Error(`no fragment with provided id was found in database`);
       }
 
-      return Promise.resolve(
-        new Fragment({
-          id: fragment.id,
-          ownerId: fragment.ownerId,
-          type: fragment.type,
-          size: fragment.size,
-          created: fragment.created,
-          updated: fragment.updated,
-        })
-      );
+      if (fragment instanceof Fragment) {
+        return Promise.resolve(fragment);
+      } else {
+        return Promise.resolve(new Fragment(fragment));
+      }
     } catch (err) {
       throw new Error(`error retrieving fragment: ${err.message}`);
     }
