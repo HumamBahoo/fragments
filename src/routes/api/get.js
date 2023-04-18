@@ -66,7 +66,7 @@ module.exports.getFragmentDataById = async (req, res) => {
     // otherwise return raw fragment data with its type
     else {
       res.setHeader('Content-Type', fragment.type);
-      return res.status(200).send(data);
+      res.status(200).send(data);
     }
   } catch (err) {
     const errorResponse = createErrorResponse(404, err.message);
