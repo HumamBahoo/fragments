@@ -51,7 +51,7 @@ WORKDIR /fragments
 COPY --from=setup /fragments /fragments
 
 # install curl for our Healthcheck
-RUN apk --no-cache --update add curl=7.83.1-r6
+RUN apk --no-cache --update add curl
 
 # define our env variables
 ENV PORT=8080
